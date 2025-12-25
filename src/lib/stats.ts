@@ -75,3 +75,22 @@ export const getTotalStats = (records: GyeongjoRecord[]) => {
 
   return { totalCount, totalAmount, avgAmount };
 };
+
+export const getIncomeExpenseStats = (records: GyeongjoRecord[]) => {
+  const incomeRecords = records.filter(r => r.type === '수입');
+  const expenseRecords = records.filter(r => r.type === '지출');
+
+  const incomeTotal = incomeRecords.reduce((acc, r) => acc + r.amount, 0);
+  const expenseTotal = expenseRecords.reduce((acc, r) => acc + r.amount, 0);
+  const netAmount = incomeTotal - expenseTotal;
+
+  return {
+    incomeCount: incomeRecords.length,
+    incomeTotal,
+    incomeAvg: incomeRecords.length > 0 ? Math.round(incomeTotal / incomeRecords.length) : 0,
+    expenseCount: expenseRecords.length,
+    expenseTotal,
+    expenseAvg: expenseRecords.length > 0 ? Math.round(expenseTotal / expenseRecords.length) : 0,
+    netAmount,
+  };
+};

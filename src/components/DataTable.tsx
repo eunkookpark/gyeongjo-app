@@ -12,6 +12,7 @@ export default function DataTable({ records, onDelete }: DataTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterYear, setFilterYear] = useState('');
+  const [filterType, setFilterType] = useState<'' | '수입' | '지출'>('');
 
   const filteredRecords = records.filter(record => {
     const matchesSearch =
@@ -21,11 +22,16 @@ export default function DataTable({ records, onDelete }: DataTableProps) {
 
     const matchesCategory = !filterCategory || record.category === filterCategory;
     const matchesYear = !filterYear || record.date.startsWith(filterYear);
+    const matchesType = !filterType || record.type === filterType;
 
-    return matchesSearch && matchesCategory && matchesYear;
+    return matchesSearch && matchesCategory && matchesYear && matchesType;
   });
 
   const years = [...new Set(records.map(r => r.date.substring(0, 4)))].sort().reverse();
+
+  // 필터링된 데이터의 수입/지출 합계
+  const incomeTotal = filteredRecords.filter(r => r.type === '수입').reduce((sum, r) => sum + r.amount, 0);
+  const expenseTotal = filteredRecords.filter(r => r.type === '지출').reduce((sum, r) => sum + r.amount, 0);
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
@@ -79,11 +85,51 @@ export default function DataTable({ records, onDelete }: DataTableProps) {
               <option key={year} value={year}>{year}년</option>
             ))}
           </select>
+
+          {/* 수입/지출 필터 */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-300">
+            <button
+              onClick={() => setFilterType('')}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                filterType === '' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setFilterType('수입')}
+              className={`px-3 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${
+                filterType === '수입' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              수입
+            </button>
+            <button
+              onClick={() => setFilterType('지출')}
+              className={`px-3 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${
+                filterType === '지출' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              지출
+            </button>
+          </div>
         </div>
 
-        <p className="text-sm text-gray-500 mt-2">
-          총 {filteredRecords.length}건 / 전체 {records.length}건
-        </p>
+        {/* 요약 정보 */}
+        <div className="flex flex-wrap gap-4 mt-3 text-sm">
+          <span className="text-gray-500">
+            총 {filteredRecords.length}건 / 전체 {records.length}건
+          </span>
+          <span className="text-green-600 font-medium">
+            수입: +{formatAmount(incomeTotal)}원
+          </span>
+          <span className="text-red-600 font-medium">
+            지출: -{formatAmount(expenseTotal)}원
+          </span>
+          <span className={`font-bold ${incomeTotal - expenseTotal >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+            순액: {incomeTotal - expenseTotal >= 0 ? '+' : ''}{formatAmount(incomeTotal - expenseTotal)}원
+          </span>
+        </div>
       </div>
 
       {/* 테이블 */}
@@ -111,7 +157,7 @@ export default function DataTable({ records, onDelete }: DataTableProps) {
               </tr>
             ) : (
               filteredRecords.map((record, index) => (
-                <tr key={record.id}>
+                <tr key={record.id} className={record.type === '수입' ? 'bg-green-50' : 'bg-red-50'}>
                   <td className="font-medium text-gray-900">{index + 1}</td>
                   <td>{record.date}</td>
                   <td>
